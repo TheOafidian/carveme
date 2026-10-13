@@ -104,21 +104,27 @@ def maincall(inputfile, input_type='protein', outputfile=None, diamond_args=None
         input_type = 'protein' if inputfile.endswith('.faa.gz') else 'dna'
 
     if input_type == 'protein' or input_type == 'dna':
-        if verbose:
-            print('Running diamond...')
+        
         diamond_db = project_dir + config.get('generated', 'diamond_db')
         blast_output = os.path.splitext(inputfile)[0] + '.tsv'
-        exit_code = run_blast(inputfile, input_type, blast_output, diamond_db, diamond_args, verbose)
 
-        if exit_code is None:
-            print('Unable to run diamond (make sure diamond is available in your PATH).')
-            return
+        if not os.path.exists(blast_output):
+            if verbose:
+                print('Running diamond...')
+            exit_code = run_blast(inputfile, input_type, blast_output, diamond_db, diamond_args, verbose)
 
-        if exit_code != 0:
-            print('Failed to run diamond.')
-            if diamond_args is not None:
-                print('Incorrect diamond args? Please check documentation or use default args.')
-            return
+            if exit_code is None:
+                print('Unable to run diamond (make sure diamond is available in your PATH).')
+                return
+
+            if exit_code != 0:
+                print('Failed to run diamond.')
+                if diamond_args is not None:
+                    print('Incorrect diamond args? Please check documentation or use default args.')
+                return
+        else:
+            if verbose:
+                print(f"Reusing diamond output at {blast_output}")
 
         annotations = load_diamond_results(blast_output)
     elif input_type == 'eggnog':
